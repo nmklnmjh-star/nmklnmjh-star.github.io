@@ -257,12 +257,15 @@
             navigator.clipboard.writeText(link).then(() => alert('链接已复制'));
         }
         
-        // 音乐播放器
+        // 音乐播放器 - 修复自动播放问题
         let audioPlayer, isPlaying = false, currentVolume = 50;
         
         function initMusicPlayer() {
             audioPlayer = new Audio('https://github.com/nmklnmjh-star/nmklnmjh-star.github.io/raw/refs/heads/main/mu1.mp3');
             audioPlayer.volume = currentVolume / 100;
+            
+            // 修复自动播放 - 用户交互后自动播放
+            document.addEventListener('click', startAudio, { once: true });
             
             audioPlayer.addEventListener('timeupdate', () => {
                 const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100 || 0;
@@ -272,6 +275,14 @@
             
             audioPlayer.addEventListener('loadedmetadata', () => {
                 document.getElementById('durationTime').textContent = formatTime(audioPlayer.duration);
+                // 预加载完成后立即播放
+                startAudio();
+            });
+            
+            // 修复音频加载错误
+            audioPlayer.addEventListener('error', (e) => {
+                console.error('音频加载失败:', e);
+                alert('音乐加载失败，请检查链接是否正确');
             });
             
             const savedVolume = localStorage.getItem('playerVolume');
@@ -279,6 +290,26 @@
                 currentVolume = parseInt(savedVolume);
                 document.getElementById('volumeSlider').value = currentVolume;
                 audioPlayer.volume = currentVolume / 100;
+            }
+            
+            // 添加静音属性绕过自动播放限制
+            audioPlayer.muted = true;
+        }
+        
+        function startAudio() {
+            if (!audioPlayer) return;
+            
+            try {
+                audioPlayer.muted = false;
+                audioPlayer.play().then(() => {
+                    isPlaying = true;
+                    document.getElementById('playIcon').className = 'fa fa-pause';
+                }).catch(e => {
+                    console.log('自动播放被阻止，需要用户点击:', e);
+                    // 显示播放按钮让用户手动点击
+                });
+            } catch (e) {
+                console.error('播放失败:', e);
             }
         }
         
@@ -288,11 +319,16 @@
             if (isPlaying) {
                 audioPlayer.pause();
                 document.getElementById('playIcon').className = 'fa fa-play';
+                isPlaying = false;
             } else {
-                audioPlayer.play();
-                document.getElementById('playIcon').className = 'fa fa-pause';
+                audioPlayer.play().then(() => {
+                    isPlaying = true;
+                    document.getElementById('playIcon').className = 'fa fa-pause';
+                }).catch(e => {
+                    console.error('播放失败:', e);
+                    alert('播放失败，请点击页面任意位置后重试');
+                });
             }
-            isPlaying = !isPlaying;
         }
         
         function previousSong() { }
@@ -323,11 +359,18 @@
         }
         
         function formatTime(seconds) {
-            if (!seconds) return '0:00';
+            if (!seconds || isNaN(seconds)) return '0:00';
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
         }
+        
+        // 页面点击后自动播放
+        document.body.addEventListener('click', function() {
+            if (audioPlayer && !isPlaying) {
+                togglePlay();
+            }
+        });
     </script>
 </body>
 </html>
