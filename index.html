@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人主页 - ROM分享</title>
+    <title>91789178</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background-color: #f8f9fa; color: #333; line-height: 1.6; }
@@ -120,15 +120,21 @@
     </div>
 
     <script>
-        // 浏览量统计
+        // 浏览量统计（修复版：改用本地存储模拟，避免依赖外部接口）
         window.onload = async () => {
             const viewCount = document.getElementById('viewCount');
             try {
-                const response = await fetch(`https://api.countapi.xyz/hit/my-profile/viewcount`);
-                const data = await response.json();
-                viewCount.textContent = data.value.toLocaleString();
-            } catch {
-                viewCount.textContent = '1,234';
+                // 从本地存储读取历史浏览量，无则初始化为1234
+                let count = localStorage.getItem('profileViewCount');
+                if (!count) count = 9178;
+                // 每次加载页面浏览量+1，并更新本地存储
+                count = parseInt(count) + 1;
+                localStorage.setItem('profileViewCount', count);
+                // 格式化显示（添加千分位）
+                viewCount.textContent = count.toLocaleString();
+            } catch (error) {
+                // 异常时显示默认值
+                viewCount.textContent = '1,235';
             }
             initRomShare();
             initMusicPlayer();
